@@ -1,0 +1,43 @@
+<div class="container">
+    <h1>High Performance Fooz</h1>
+</div>
+<div class="main container">
+    <div class="row">
+        <div class="col-md-12">
+            <h3>Dashboard</h3>
+            <p>Welcome to the official TSG fooseball application.</p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div id="currentGame">
+                <h4>Current Game</h4>
+                <div id="gameMeta">
+                    <p>Name: <%= game.createdAt %></p>
+                </div>
+                <div id="yellowTeam">
+                    <div id="y1" class="player clearfix">
+                        <p class="playerName"><%= game.y1.firstName %></p>
+                    </div>
+                    <div id="y2" class="player clearfix">
+                        <p class="playerName"><%= game.y2.firstName %></p>
+                    </div>
+                </div>
+                <div id="blackTeam">
+                    <div id="b1" class="player clearfix">
+                        <p class="playerName"><%= game.b1.firstName %></p>
+                    </div>
+                    <div id="b2" class="player clearfix">
+                        <p class="playerName"><%= game.b2.firstName %></p>
+                    </div>
+                </div>
+                <h5>Goals</h5>
+                <ul>
+                    <% _.forEach(game.goals, function(goal) { %>
+                        <li>Goal Scorer: <%= goal.scorer.firstName %></li>
+                    <% }); %>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
