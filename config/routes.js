@@ -36,8 +36,6 @@ module.exports.routes = {
     view: 'homepage'
   }*/
 
-  '/': 'GameController.dashboard'
-
   /***************************************************************************
   *                                                                          *
   * Custom routes here...                                                    *
@@ -48,4 +46,6 @@ module.exports.routes = {
   *                                                                          *
   ***************************************************************************/
 
+  'get /player/games': 'PlayerController.findGamesForPlayer',
+  'get /player/gamesWon': 'PlayerController.findGamesWonForPlayer'
 };

@@ -1,3 +1,5 @@
+/* global Game */
+
 /**
 * Game.js
 *
@@ -9,49 +11,74 @@ module.exports = {
 
 	attributes: {
 
-		y1: {
+		yO: {
 			model: 'player',
 			required: true
 		},
 
-		y2: {
+		yD: {
 			model: 'player',
 			required: true
 		},
 
-		b1: {
+		bO: {
 			model: 'player',
 			required: true
 		},
 
-		b2: {
+		bD: {
 			model: 'player',
 			required: true
-		},
-
-		gameStart: {
-			type: 'datetime',
-			defaultsTo: new Date()
 		},
 
 		gameEnd: {
 			type: 'datetime'
 		},
 
-		status: {
-			type: 'string',
-			enum: [
-				'active',
-				'finished',
-				'canceled'
-			],
-			defaultsTo: 'active'
-		},
-
 		goals: {
 			collection: 'goal',
 			via: 'game'
 		}
+
+	},
+
+	findLatestGame: function(cb) {
+		Game.find().sort({ $natural: 1 }).exec(function(err, games) {
+			cb(games[0]);
+		});
+	},
+
+	findYellowGoalsForGame: function(game, cb) {
+		Game.findLatestGame(function(game) {
+			
+		});
+	},
+
+	findBlackGoalsForGame: function(game, cb) {
+		Game.findLatestGame(function(game) {
+
+		});
+	},
+
+	findGamesByPlayer: function(player, cb) {
+		console.log("Finding games by player: " + player.id);
+
+		Game.find()
+			.populate("yO", { where: { id: player.id } })
+			.populate("yD", { where: { id: player.id } })
+			.populate("bO", { where: { id: player.id } })
+			.populate("bD", { where: { id: player.id } })
+			.exec(function(err, games) {
+
+			cb(games);
+		});
+	},
+
+	findWinningTeamForGame: function(game, cb) {
+		// find yellow goals
+
+
+		// find black goals
 
 	}
 
