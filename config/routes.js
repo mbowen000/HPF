@@ -46,6 +46,10 @@ module.exports.routes = {
   *                                                                          *
   ***************************************************************************/
 
-  'get /player/games': 'PlayerController.findGamesForPlayer',
-  'get /player/gamesWon': 'PlayerController.findGamesWonForPlayer'
+  /*'get /player/games': 'PlayerController.findGamesForPlayer',
+  'get /player/gamesWon': 'PlayerController.findGamesWonForPlayer',*/
+
+  // CAREFUL!!!!
+  'get /goal/deleteAllGoals': 'GoalController.deleteAllGoals',
+  'get /game/deleteAllGames': 'GameController.deleteAllGames'
 };
