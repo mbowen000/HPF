@@ -31,15 +31,12 @@ module.exports = {
 			// associated with this game
 			params.game = game;
 
-			// determine the team string depending on who scored the goal
-			var team = (params.scorer === "yO" || params.scorer === "yD") ? "yellow" : "black";
-			
 			// get the number of goals that have been scored already by the team that is
 			// scoring the current goal - we need the goals already scored so we can adjust
 			// who scored this goal
-			Game.findGoalsForGameByTeam(game, team, function(goals) {
+			Game.findGoalsForGameByTeam(game, function(goals) {
 				// create our new goal
-				Goal.createGoal(params, game, goals.length, team, function() {
+				Goal.createGoal(params, game, goals, function() {
 					return res.ok();
 				});
 			});
@@ -51,7 +48,7 @@ module.exports = {
 	 * @param {Object} req - The request object for this controller.
 	 * @param {Object} res - The response object for this controller.
 	 */
-	deleteAllGoals: function(req, res) {
+	/*deleteAllGoals: function(req, res) {
 		console.log("Deleting all goals...");
 
 		// delete all our goals
@@ -60,6 +57,6 @@ module.exports = {
 
 			return res.ok();
 		});
-	}
+	}*/
 
 };

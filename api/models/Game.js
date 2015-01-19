@@ -1,5 +1,8 @@
 /* global module, Game */
 
+var moment = require('moment-timezone');
+moment.tz.setDefault("America/Chicago");
+
 /**
 * Game.js
 *
@@ -48,23 +51,43 @@ module.exports = {
 	 */
 	findLatestGame: function(cb) {
 		// sort all of our games by the reverse order that they were added
-		Game.find().sort({ $natural: -1 }).exec(function(err, games) {
-			// return the first game to our callback - this is the most recent
+		Game.findOne()
+			.populate("yO")
+			.populate("yD")
+			.populate("bO")
+			.populate("bD")
+			.populate("goals")
+			.sort({ $natural: -1 }).exec(function(err, game) {
+
+			// return the game to our callback - this is the most recent
 			// game since we've sorted them by when they were added in reverse
-			cb(games[0]);
+			cb(game);
+		});
+	},
+
+	findGameById: function(gameId, cb) {
+		console.log("Finding game with ID: " + gameId);
+
+		Game.findOne({ id: gameId })
+			.populate("yO")
+			.populate("yD")
+			.populate("bO")
+			.populate("bD")
+			.populate("goals")
+			.exec(function(err, game) {
+
+			cb(game);
 		});
 	},
 
 	/**
 	 * Finds all the goals in a game for a team (either "yellow" or "black").
 	 * @param {Object} game - The game to find the goals for a team.
-	 * @param {String} team - The team to find the goals for. Must be either "yellow"
-	 * or "black".
 	 * @param {Function} cb - The callback to invoke with the goal objects for the specified
 	 * game and team.
 	 */
-	findGoalsForGameByTeam: function(game, team, cb) {
-		console.log("Finding " + team + " goals for game: " + game.id);
+	findGoalsForGameByTeam: function(game, cb) {
+		console.log("Finding team goals for game: " + game.id);
 
 		// we need to find our game for the passed in game ID - we also need to populate the
 		// players and the goals
@@ -76,42 +99,39 @@ module.exports = {
 			.populate("goals")
 			.exec(function(err, gameResult) {
 			
-			// filter out our goals to find the goals for the team that was specified
-			var goals = _.filter(gameResult.goals, function(goal) {
+			var yellowGoals = [];
+			var blackGoals = [];
+
+			_.each(gameResult.goals, function(goal) {
 				// true if the goal was scored by a yellow player, false otherwise
 				var goalScoredByYellowTeam = goal.scorer === gameResult.yO.id || goal.scorer === gameResult.yD.id;
 
 				// true if the goal was scored by a black player, false otherwise
 				var goalScoredByBlackTeam = goal.scorer === gameResult.bO.id || goal.scorer === gameResult.bD.id;
 
-				// they want the yellow team goals
-				if(team === "yellow") {
-					if(goal.type === "regular") {
-						// if it's a regular goal we're dealing with, then it's a yellow goal if it was
-						// scored by the yellow team
-						return goalScoredByYellowTeam;
-					} else { // this is an OG
-						// if it's an OG we're dealing with, then it's a yellow goal if it was scored
-						// by the black team
-						return goalScoredByBlackTeam;
-					}	
-				} else { // they want the black team goals
-					if(goal.type === "regular") {
-						// if it's a regular goal we're dealing with, then it's a black goal if it was
-						// scored by the black team
-						return goalScoredByBlackTeam;
-					} else { // this is an OG
-						// if it's an OG we're dealing with, then it's a black goal if it was scored
-						// by the yellow team
-						return goalScoredByYellowTeam; 
+				if(goal.type === "regular") {
+					if(goalScoredByYellowTeam) {
+						yellowGoals.push(goal);
+					} else {
+						blackGoals.push(goal);
+					}
+				} else { // this is an OG
+					if(goalScoredByYellowTeam) {
+						blackGoals.push(goal);
+					} else {
+						yellowGoals.push(goal);
 					}
 				}
 			});
 
-			console.log("Found " + goals.length + " " + team + " goals.");
+			console.log("Found " + yellowGoals.length + " yellow goals.");
+			console.log("Found " + blackGoals.length + " black goals.");
 
 			// invoke our callback with the goals we found for the team specified
-			cb(goals);
+			cb({
+				"yellow": yellowGoals,
+				"black": blackGoals
+			});
 		});
 	},
 
@@ -133,17 +153,97 @@ module.exports = {
 		});
 	},
 
+	findGameSummary: function(game, cb) {
+		var gameDuration = moment.duration(moment(game.gameEnd).diff(moment(game.createdAt)));
+		var gameLengthString = gameDuration.minutes() + " minutes";
+		if(gameDuration.seconds()) {
+			gameLengthString += " and " + gameDuration.seconds() + " seconds";
+		}
+
+		var gameSummary = {
+			startedAt: moment(game.createdAt).format('M/D/YYYY h:mm:ss')
+		};
+
+		if(game.gameEnd) {
+			gameSummary.endedAt = moment(game.gameEnd).format('M/D/YYYY h:mm:ss')
+		}
+
+		gameSummary.duration = gameLengthString;
+		gameSummary.teams = [
+			{
+				team: "yellow",
+				players: []
+			},
+			{
+				team: "black",
+				players: []
+			}
+		];
+			
+		var yOGoals = Player.separateGoalsByPlayer(game.yO, game.goals);
+		var yDGoals = Player.separateGoalsByPlayer(game.yD, game.goals);
+
+		gameSummary.teams[0].players.push({
+			name: game.yO.firstName + " " + game.yO.lastName,
+			goals: yOGoals.regular.length,
+			ogs: yOGoals.ogs.length
+		});
+
+		gameSummary.teams[0].players.push({
+			name: game.yD.firstName + " " + game.yD.lastName,
+			goals: yDGoals.regular.length,
+			ogs: yDGoals.ogs.length
+		});
+
+		var bOGoals = Player.separateGoalsByPlayer(game.bO, game.goals);
+		var bDGoals = Player.separateGoalsByPlayer(game.bD, game.goals);
+
+		gameSummary.teams[1].players.push({
+			name: game.bO.firstName + " " + game.bO.lastName,
+			goals: bOGoals.regular.length,
+			ogs: bOGoals.ogs.length
+		});
+
+		gameSummary.teams[1].players.push({
+			name: game.bD.firstName + " " + game.bD.lastName,
+			goals: bDGoals.regular.length,
+			ogs: bDGoals.ogs.length
+		});
+
+		gameSummary.score = {
+			"yellow": yOGoals.regular.length + yDGoals.regular.length + bOGoals.ogs.length + bDGoals.ogs.length,
+			"black": yOGoals.ogs.length + yDGoals.ogs.length + bOGoals.regular.length + bDGoals.regular.length,
+		};
+
+		cb(gameSummary);
+	},
+
 	findGamesByPlayer: function(player, cb) {
 		console.log("Finding games by player: " + player.id);
 
 		Game.find()
-			.populate("yO", { where: { id: player.id } })
-			.populate("yD", { where: { id: player.id } })
-			.populate("bO", { where: { id: player.id } })
-			.populate("bD", { where: { id: player.id } })
+			.populate("yO")
+			.populate("yD")
+			.populate("bO")
+			.populate("bD")
+			.populate("goals")
 			.exec(function(err, games) {
 
-			cb(games);
+			var playerGames = _.filter(games, function(game) {
+				return game.yO.id === player.id || game.yD.id === player.id || game.bO.id === player.id || game.bD.id === player.id;
+			});
+
+			cb(playerGames);
+		});
+	},
+
+	findWinningTeamForGame: function(game, cb) {
+		Game.findGoalsForGameByTeam(game, function(goals) {
+			if(goals.yellow.length === 5) {
+				cb("yellow");
+			} else {
+				cb("black");
+			}
 		});
 	}
 

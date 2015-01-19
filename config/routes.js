@@ -48,8 +48,12 @@ module.exports.routes = {
 
   /*'get /player/games': 'PlayerController.findGamesForPlayer',
   'get /player/gamesWon': 'PlayerController.findGamesWonForPlayer',*/
+  'get /game/latest': 'GameController.findLatestGameSummary',
+  'get /game/summary': 'GameController.findGameSummaryById',
+
+  'get /player/stats': 'PlayerController.findPlayerStatsById'
 
   // CAREFUL!!!!
-  'get /goal/deleteAllGoals': 'GoalController.deleteAllGoals',
-  'get /game/deleteAllGames': 'GameController.deleteAllGames'
+  //'get /goal/deleteAllGoals': 'GoalController.deleteAllGoals',
+  //'get /game/deleteAllGames': 'GameController.deleteAllGames'
 };
